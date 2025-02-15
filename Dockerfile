@@ -22,7 +22,7 @@ WORKDIR /var/www/html
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Instalar dependencias de Composer
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install
 
 # Limpiar la caché de Symfony
 RUN php bin/console cache:clear --env=prod
