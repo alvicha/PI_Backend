@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "80:80"  # Expone el puerto 80 del contenedor al puerto 80 del host
+    volumes:
+      - .:/var/www/html  # Monta el código actual en el contenedor
+    depends_on:
+      - db  # Depende del servicio de base de datos
+    environment:
+      DATABASE_URL: "mysql://root:root@172.18.0.2:3306/proyecto"  # Configura la conexión a la base de datos
+
+  db:
+    image: mysql:5.7  # Usa la imagen oficial de MySQL 5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # Contraseña del usuario root
+      MYSQL_DATABASE: proyecto  # Nombre de la base de datos
+      MYSQL_USER: root  # Usuario de la base de datos
+      MYSQL_PASSWORD: root  # Contraseña del usuario
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persiste los datos de la base de datos
+
+volumes:
+  mysql_data:  # Define un volumen para persistir los datos de MySQL
