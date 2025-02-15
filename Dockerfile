@@ -30,10 +30,7 @@ RUN chown -R www-data:www-data /var/www/html/var
 RUN a2enmod rewrite
 
 # Instalar Symfony Flex (si no se ha instalado automáticamente)
-RUN composer install --no-interaction --optimize-autoloader
-
-# Calentar el caché de Symfony para generar el directorio 'var'
-RUN php /var/www/html/bin/console cache:warmup --env=prod
+RUN composer install
 
 # Exponer el puerto 80
 EXPOSE 80
