@@ -21,7 +21,7 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest .
           docker tag ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest ${{ secrets.DOCKER_USERNAME }}/symfony-api:${{ github.sha }}
 
-      - name: 📤 Subir la imagen a Docker Hub
+      - name: Subir la imagen a Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:${{ github.sha }}
