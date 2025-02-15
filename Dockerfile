@@ -1,6 +1,16 @@
 # Usa la imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
+# Instalar dependencias necesarias (como extensiones de PHP)
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libpq-dev \
+    git \
+    unzip \
+    zip \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl pdo pdo_pgsql
+
 # Instalar PDO y el controlador MySQL para PHP
 RUN docker-php-ext-install pdo pdo_mysql
 
@@ -19,7 +29,7 @@ RUN chown -R www-data:www-data /var/www/html/var
 # Habilitar el módulo de reescritura de Apache (para Symfony)
 RUN a2enmod rewrite
 
-# Ejecutar Composer install
+# Instalar Symfony Flex (si no se ha instalado automáticamente)
 RUN composer install --no-interaction --optimize-autoloader
 
 # Calentar el caché de Symfony para generar el directorio 'var'
@@ -31,6 +41,5 @@ EXPOSE 80
 # Configurar el directorio de trabajo
 WORKDIR /var/www/html
 
-
-# Configurar Apache
+# Configurar Apache para que corra en primer plano (esto es necesario para Docker)
 CMD ["apache2-foreground"]
