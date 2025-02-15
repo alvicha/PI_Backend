@@ -8,17 +8,23 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     zip \
-    && docker-php-ext-install intl pdo pdo_mysql opcache
+    && docker-php-ext-install intl pdo pdo_mysql opcache mysqli \
+    && docker-php-ext-enable mysqli
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiar archivos de la aplicación
+# Definir directorio de trabajo
 WORKDIR /var/www/html
+
+# Copiar archivos de la aplicación
 COPY . .
 
-# Establecer permisos
-RUN chown -R www-data:www-data /var/www/html/var /var/www/html/public
+# 🔹 Crear directorios si no existen
+RUN mkdir -p var public
+
+# 🔹 Establecer permisos en directorios existentes
+RUN chown -R www-data:www-data var public
 
 # Configurar Apache
 RUN a2enmod rewrite
