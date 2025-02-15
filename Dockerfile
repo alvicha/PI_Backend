@@ -1,24 +1,34 @@
-FROM php:8.1-apache
+# Usa la imagen oficial de PHP con Apache
+FROM php:8.2-apache
 
-# Instalar dependencias del sistema necesarias para PHP y las extensiones
-RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libicu-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo_mysql zip intl
+# Instalar dependencias necesarias (como extensiones de PHP)
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libpq-dev \
+    git \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl pdo pdo_pgsql
 
 # Instalar Composer
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiar el código de la aplicación al contenedor
+# Copiar el código fuente del proyecto
 COPY . /var/www/html/
 
-# Establecer el directorio de trabajo
+# Establecer permisos
+RUN chown -R www-data:www-data /var/www/html/var
+
+# Habilitar el módulo de reescritura de Apache (para Symfony)
+RUN a2enmod rewrite
+
+# Exponer el puerto 80
+EXPOSE 80
+
+# Configurar el directorio de trabajo
 WORKDIR /var/www/html
 
-# Ejecutar Composer para instalar dependencias
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-cache
+# Ejecutar Composer install
+RUN composer install --no-interaction --optimize-autoloader
 
-# Establecer permisos para el servidor web
-RUN chown -R www-data:www-data /var/www/html
-
-# Exponer el puerto 80 para Apache
-EXPOSE 80
+# Configurar Apache
+CMD ["apache2-foreground"]

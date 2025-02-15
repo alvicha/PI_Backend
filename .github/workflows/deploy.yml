@@ -48,8 +48,12 @@ jobs:
             
             # Descargar la última versión de la imagen
             docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-app:latest
+
+            # Ejecutar el nuevo contenedor usando Docker Compose (si lo prefieres)
+            # cd /path/to/docker-compose
+            # docker-compose -f docker-compose.yml up -d --build
             
-            # Ejecutar el nuevo contenedor
+            # Si usas docker run en lugar de Docker Compose:
             docker run -d --name symfony-app -p 80:80 \
               -e APP_ENV=prod \
               -e DB_HOST=${{ secrets.DB_HOST }} \
