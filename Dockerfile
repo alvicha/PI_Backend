@@ -1,13 +1,8 @@
 # Usa la imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instalar dependencias necesarias (como extensiones de PHP)
-RUN apt-get update && apt-get install -y \
-    libicu-dev \
-    libpq-dev \
-    git \
-    && docker-php-ext-configure intl \
-    && docker-php-ext-install intl pdo pdo_pgsql
+# Instalar PDO y el controlador MySQL para PHP
+RUN docker-php-ext-install pdo pdo_mysql
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
