@@ -21,10 +21,17 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Construir y subir la imagen de la aplicación Symfony
+      # Construir y subir la imagen de la base de datos (si tienes MySQL o MariaDB)
+      - name: Build and push DB Docker image
+        run: |
+          cd mysql  # Cambiar esta ruta si tienes una carpeta diferente para la base de datos
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/sql_pinacoteca:v1 .
+          docker push ${{ secrets.DOCKER_USERNAME }}/sql_pinacoteca:v1
+
+      # Construir y subir la imagen de la aplicación Symfony (PHP)
       - name: Build and push Symfony PHP Docker image
         run: |
-          cd php
+          cd php  # Cambiar esta ruta si tienes una carpeta diferente para tu aplicación Symfony
           docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony_pinacoteca:v1 .
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony_pinacoteca:v1
 
@@ -71,4 +78,4 @@ jobs:
           key: ${{ secrets.REMOTE_KEY }}
           script: |
             cd ~/deploy
-            docker exec -it symfony_container_name php /var/www/html/bin/console cache:warmup --env=prod
+            docker exec -it symfony_pinacoteca php /var/www/html/bin/console cache:warmup --env=prod
