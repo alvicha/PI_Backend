@@ -18,15 +18,14 @@ COPY . /var/www/html
 # Establecer el directorio de trabajo
 WORKDIR /var/www/html
 
-# Instalar dependencias de Composer
+# Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-
-# Limpiar la caché de Symfony antes de instalar dependencias
-RUN php bin/console cache:clear --env=prod
 
 # Instalar dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader
+
+# Limpiar la caché de Symfony
+RUN php bin/console cache:clear --env=prod
 
 # Configurar permisos
 RUN chown -R www-data:www-data /var/www/html/var
