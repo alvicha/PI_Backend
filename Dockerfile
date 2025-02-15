@@ -16,7 +16,7 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html/proyecto
 
 # Copia los archivos del proyecto
-COPY . /var/www/html/php_pinacoteca
+COPY . /var/www/html/proyecto
 
 # Instala las dependencias de Symfony
 RUN composer install --no-dev --optimize-autoloader
