@@ -24,6 +24,9 @@ RUN chown -R www-data:www-data /var/www/html/var
 # Habilitar el módulo de reescritura de Apache (para Symfony)
 RUN a2enmod rewrite
 
+# Ejecutar Composer install
+RUN composer install --no-interaction --optimize-autoloader
+
 # Calentar el caché de Symfony para generar el directorio 'var'
 RUN php /var/www/html/bin/console cache:warmup --env=prod
 
@@ -33,8 +36,6 @@ EXPOSE 80
 # Configurar el directorio de trabajo
 WORKDIR /var/www/html
 
-# Ejecutar Composer install
-RUN composer install --no-interaction --optimize-autoloader
 
 # Configurar Apache
 CMD ["apache2-foreground"]
