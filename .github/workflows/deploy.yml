@@ -3,7 +3,7 @@ name: Deploy Symfony Application to Remote Server
 on:
   push:
     branches:
-      - master
+      - alberto
 
 jobs:
   build-and-deploy:
@@ -21,10 +21,17 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Construir y subir la imagen de la base de datos (si tienes MySQL o MariaDB)
+      - name: Build and push DB Docker image
+        run: |
+          cd mysql  # Cambiar esta ruta si tienes una carpeta diferente para la base de datos
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/sql_pinacoteca:v1 .
+          docker push ${{ secrets.DOCKER_USERNAME }}/sql_pinacoteca:v1
+
       # Construir y subir la imagen de la aplicación Symfony (PHP)
       - name: Build and push Symfony PHP Docker image
         run: |
-          cd php  # Cambia esto si la ruta a tu carpeta PHP es diferente
+          cd php  # Cambiar esta ruta si tienes una carpeta diferente para tu aplicación Symfony
           docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony_pinacoteca:v1 .
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony_pinacoteca:v1
 
