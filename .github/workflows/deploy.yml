@@ -1,4 +1,4 @@
-name: Deploy to AWS EC2
+name: Deploy Symfony with Docker to AWS EC2
 
 on:
   push:
@@ -10,46 +10,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Hacer checkout del código
+      # Paso 1: Checkout del código
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      # Paso 2: Configurar la clave SSH para la autenticación
-      - name: Set up SSH key
+      # Paso 2: Iniciar sesión en Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Paso 3: Construir y etiquetar la imagen Docker
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony-app:latest .
+
+      # Paso 4: Subir la imagen a Docker Hub
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/symfony-app:latest
+
+      # Paso 5: Configurar SSH y desplegar en EC2
+      - name: Deploy to AWS EC2
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa ${{ secrets.AWS_IP_ADDRESS }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.AWS_IP_ADDRESS }} >> ~/.ssh/known_hosts
 
-      # Paso 3: Desplegar a la instancia  EC2 usando la clave SSH
-      - name: Deploy to AWS EC2
-        run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.AWS_SSH_USER }}@${{ secrets.AWS_IP_ADDRESS }} << 'EOF'
-            # Cambiar al directorio donde está la aplicación Symfony
-            cd ${{ secrets.APP_PATH }}
-
-            # Hacer pull de los últimos cambios desde el repositorio
-            git pull origin main
+            set -e  # Detener script si hay errores
             
-            # Instalar las dependencias de Composer
-            composer install --no-dev --optimize-autoloader
+            # Detener y eliminar el contenedor anterior (si existe)
+            docker stop symfony-app || true
+            docker rm symfony-app || true
             
-            # Establecer las variables de entorno para  la base de datos
-            export DB_HOST=${{ secrets.DB_HOST }}
-            export DB_NAME=${{ secrets.DB_NAME }}
-            export DB_USER=${{ secrets.DB_USER }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            # Descargar la última versión de la imagen
+            docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-app:latest
             
-            # Ejecutar las migraciones y otras tareas de Symfony
-            php bin/console doctrine:database:drop --force --env=prod
-            php bin/console doctrine:database:create --env=prod
-            php bin/console doctrine:migrations:migrate --no-interaction --env=prod
+            # Ejecutar el nuevo contenedor
+            docker run -d --name symfony-app -p 80:80 \
+              -e APP_ENV=prod \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_NAME=${{ secrets.DB_NAME }} \
+              -e DB_USER=${{ secrets.DB_USER }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              ${{ secrets.DOCKER_USERNAME }}/symfony-app:latest
             
-            # Limpiar el caché y precompilar los assets
-            php bin/console cache:clear --env=prod
-            php bin/console assets:install --env=prod
-            
-            # Reiniciar el servidor Apache para que tome los cambios
-            sudo systemctl restart apache2
+            # Limpiar imágenes antiguas
+            docker image prune -af
           EOF
