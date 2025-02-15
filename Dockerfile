@@ -20,6 +20,12 @@ WORKDIR /var/www/html
 
 # Instalar dependencias de Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+
+# Limpiar la caché de Symfony antes de instalar dependencias
+RUN php bin/console cache:clear --env=prod
+
+# Instalar dependencias de Composer
 RUN composer install --no-dev --optimize-autoloader
 
 # Configurar permisos
