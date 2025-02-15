@@ -1,34 +1,30 @@
-# Usar una imagen base de PHP con Apache
+# Usar una imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instalar dependencias del sistema y extensiones de PHP necesarias
+# Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libpq-dev \
     git \
     unzip \
-    libzip-dev \
-    libpq-dev \
-    && docker-php-ext-install zip pdo pdo_mysql
-
-# Habilitar el módulo de Apache para Symfony
-RUN a2enmod rewrite
-
-# Copiar el código de la aplicación al contenedor
-COPY . /var/www/html
-
-# Establecer el directorio de trabajo
-WORKDIR /var/www/html
+    zip \
+    && docker-php-ext-install intl pdo pdo_mysql opcache
 
 # Instalar Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instalar dependencias de Composer
-RUN composer install
+# Copiar archivos de la aplicación
+WORKDIR /var/www/html
+COPY . .
 
-# Limpiar la caché de Symfony
-RUN php bin/console cache:clear --env=prod
+# Establecer permisos
+RUN chown -R www-data:www-data /var/www/html/var /var/www/html/public
 
-# Configurar permisos
-RUN chown -R www-data:www-data /var/www/html/var
+# Configurar Apache
+RUN a2enmod rewrite
+RUN service apache2 restart
 
-# Exponer el puerto 80
 EXPOSE 80
+
+# Comando de inicio
+CMD ["apache2-foreground"]
