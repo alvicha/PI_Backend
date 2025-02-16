@@ -29,13 +29,8 @@ RUN chown -R www-data:www-data /var/www/html
 # 🔹 Establecer permisos correctos para los archivos
 RUN chmod -R 755 /var/www/html
 
-# Configurar Apache para servir desde /var/www/html
-COPY ./config/000-default.conf /etc/apache2/sites-available/000-default.conf
-
-# Habilitar módulo de reescritura (mod_rewrite) en Apache
+# Configurar Apache
 RUN a2enmod rewrite
-
-# Reiniciar Apache para aplicar los cambios
 RUN service apache2 restart
 
 # Exponer el puerto 80
