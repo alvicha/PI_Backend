@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar el directorio de trabajo
+# Configurar su directorio de trabajo
 WORKDIR /var/www/html
 
 # Copiar los archivos del proyecto Symfony
