@@ -1,7 +1,7 @@
 # Imagen base con PHP-FPM
 FROM php:8.2-fpm
 
-# Instalar dependencias necesarias y Nginx
+# Instalar dependencias y Nginx
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libpq-dev \
@@ -15,18 +15,45 @@ RUN apt-get update && apt-get install -y \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar su directorio de trabajo
+# Copiar archivos del proyecto Symfony
 WORKDIR /var/www/html
-
-# Copiar los archivos del proyecto Symfony
 COPY . /var/www/html
 
-# Establecer permisos
+# Establecer permisos correctos
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 755 /var/www/html
 
 # Exponer el puerto 80
 EXPOSE 80
 
-# Comando de inicio para PHP-FPM y Nginx
-CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
+# Configurar Nginx para Symfony directamente desde el Dockerfile
+RUN echo "\
+server {\n\
+    listen 80;\n\
+    server_name _;\n\
+    root /var/www/html/public;\n\
+    index index.php;\n\
+\n\
+    location / {\n\
+        try_files \$uri /index.php\$is_args\$args;\n\
+    }\n\
+\n\
+    location ~ ^/index\\.php(/|$) {\n\
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;\n\
+        fastcgi_split_path_info ^(.+\\.php)(/.*)$;\n\
+        include fastcgi_params;\n\
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\n\
+        fastcgi_param DOCUMENT_ROOT \$realpath_root;\n\
+        internal;\n\
+    }\n\
+\n\
+    location ~ \\.php\$ {\n\
+        return 404;\n\
+    }\n\
+\n\
+    error_log /var/log/nginx/error.log;\n\
+    access_log /var/log/nginx/access.log;\n\
+}" > /etc/nginx/sites-available/default
+
+# Comando de inicio
+CMD ["sh", "-c", "service php8.2-fpm start && exec nginx -g 'daemon off;'"]
