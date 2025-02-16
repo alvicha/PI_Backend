@@ -10,22 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Paso 1: Clonar el repositorio
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
+      # Paso 2: Iniciar sesión en Docker Hub
       - name: Iniciar sesión en Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      # Paso 3: Construir y etiquetar la imagen Docker
       - name: Construir y etiquetar la imagen Docker
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest .
           docker tag ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest ${{ secrets.DOCKER_USERNAME }}/symfony-api:${{ github.sha }}
 
+      # Paso 4: Subir la imagen a Docker Hub
       - name: Subir la imagen a Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:${{ github.sha }}
 
+      # Paso 5: Desplegar en EC2
       - name: Configurar SSH y desplegar en EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -33,7 +38,15 @@ jobs:
           username: ubuntu
           key: ${{ secrets.REMOTE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
+            # Detener y eliminar el contenedor si ya existe
             docker stop symfony_api || true
             docker rm symfony_api || true
-            docker run -d --name symfony_api -p 80:80 ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
+
+            # Eliminar imágenes antiguas para evitar conflictos
+            docker rmi $(docker images -q ${{ secrets.DOCKER_USERNAME }}/symfony-api) || true
+
+            # Descargar la última imagen de Docker Hub
+            docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
+
+            # Ejecutar el contenedor en modo detached
+            docker run -d --name symfony_api -p 80:80 --restart always ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
