@@ -21,6 +21,9 @@ WORKDIR /var/www/html
 # Copiar los archivos del proyecto Symfony
 COPY . /var/www/html
 
+# Instalar las dependencias de Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 # Copiar la configuración de Nginx
 COPY nginx.conf /etc/nginx/sites-available/default
 
