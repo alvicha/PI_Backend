@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Clonar su repositorio
+      # Paso 1: Clonar el repositorio
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
@@ -30,30 +30,27 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/symfony-api:${{ github.sha }}
 
-      # Paso 5: Desplegar en EC2
-      - name: Configurar SSH y desplegar en EC2
+      # Paso 5: Copiar el archivo docker-compose.yml a EC2
+      - name: Copiar docker-compose.yml a EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ubuntu
           key: ${{ secrets.REMOTE_KEY }}
           script: |
-            # Detener y eliminar el contenedor si ya existe
-            docker stop symfony_api || true
-            docker rm symfony_api || true
+            # Copiar el archivo docker-compose.yml al servidor EC2
+            scp -i ${{ secrets.REMOTE_KEY }} docker-compose.yml ubuntu@${{ secrets.REMOTE_HOST }}:/home/ubuntu/
 
-            # Eliminar imágenes antiguas para evitar conflictos
-            docker rmi $(docker images -q ${{ secrets.DOCKER_USERNAME }}/symfony-api) || true
+      # Paso 6: Desplegar en EC2 usando Docker Compose
+      - name: Desplegar con Docker Compose en EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ubuntu
+          key: ${{ secrets.REMOTE_KEY }}
+          script: |
+            # Asegurarse de que el contenedor anterior esté detenido
+            docker-compose down
 
-            # Descargar la última imagen de Docker Hub
-            docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
-
-            # Crear red personalizada (si es necesario)
-            docker network create --driver bridge symfony_network || true
-
-            # Ejecutar el contenedor en modo detached
-            docker run -d --name symfony_api \
-              -p 80:80 \
-              --restart always \
-              --network symfony_network \
-              ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
+            # Levantar los contenedores con docker-compose
+            docker-compose -f /home/ubuntu/docker-compose.yml up --build -d

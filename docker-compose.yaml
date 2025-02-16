@@ -1,57 +1,45 @@
 version: '3.8'
 
 services:
-  # Servicio para la base de datos (MySQL)
-  database:
-    image: mysql:5.7
-    container_name: symfony_db
+  # Servicio para Symfony
+  symfony:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: symfony-api
+    container_name: symfony_api
+    ports:
+      - "80:80"   # Mapea el puerto 80 del contenedor al puerto 80 de tu máquina
+    environment:
+      - DATABASE_URL=mysql://root:root@db:3306/proyecto
+    depends_on:
+      - db
+    networks:
+      - symfony_network
+    volumes:
+      - .:/var/www/html
+
+  # Servicio para MySQL
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: proyecto
       MYSQL_USER: root
       MYSQL_PASSWORD: root
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "--silent"]
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-    volumes:
-      - database_data:/var/lib/mysql:rw
-    networks:
-      - app_network
-
-  # Servicio para Symfony (tu aplicación)
-  app:
-    build:
-      context: .
-    container_name: symfony_app
-    networks:
-      - app_network
-    depends_on:
-      - database
-    volumes:
-      - .:/var/www/html
-    environment:
-      DATABASE_URL: mysql://root:root@database:3306/proyecto
-    command: ["php-fpm"]
-
-  # Servicio para Nginx
-  nginx:
-    image: nginx:latest
-    container_name: symfony_nginx
-    networks:
-      - app_network
     ports:
-      - "8080:80"
+      - "3306:3306"
+    networks:
+      - symfony_network
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - .:/var/www/html
+      - db_data:/var/lib/mysql
 
-# Definimos la red común entre todos los servicios
+# Definir la red personalizada
 networks:
-  app_network:
+  symfony_network:
     driver: bridge
 
-# Volumen para la base de datos
+# Definir el volumen para los datos de la base de datos
 volumes:
-  database_data:
+  db_data:
