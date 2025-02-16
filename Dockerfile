@@ -15,11 +15,17 @@ RUN apt-get update && apt-get install -y \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar suç directorio de trabajo
+# Configurar el directorio de trabajo
 WORKDIR /var/www/html
 
 # Copiar los archivos del proyecto Symfony
 COPY . /var/www/html
+
+# Copiar la configuración de Nginx
+COPY nginx.conf /etc/nginx/sites-available/default
+
+# Habilitar la configuración de Nginx
+RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Establecer permisos
 RUN chown -R www-data:www-data /var/www/html
