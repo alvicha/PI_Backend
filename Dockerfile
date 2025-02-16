@@ -22,7 +22,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html
 
 # Instalar las dependencias de Composer
-RUN composer install
+RUN composer install --optimize-autoloader --no-interaction
 
 # Copiar la configuración de Nginx
 COPY nginx.conf /etc/nginx/sites-available/default
