@@ -19,6 +19,7 @@ final class ApiUsuariosController extends AbstractController
             'controller_name' => 'ApiUsuariosController',
         ]);
     }
+
     #[Route('/api/usuarios/addClase', methods: ['POST'], name: 'add_clase')]
 public function addClaseUsuario(Request $request, EntityManagerInterface $em): JsonResponse
 {
