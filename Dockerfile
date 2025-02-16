@@ -28,8 +28,30 @@ RUN chmod -R 755 /var/www/html
 # Exponer el puerto 80
 EXPOSE 80
 
-# Configurar Nginx para Symfony
-COPY ./config/nginx/default.conf /etc/nginx/sites-available/default
+# Configurar Nginx directamente desde el Dockerfile (sin archivo externo)
+RUN echo "\
+server {\
+    listen 80;\
+    server_name _;\
+    root /var/www/html/public;\
+    index index.php;\
+    location / {\
+        try_files \$uri /index.php\$is_args\$args;\
+    }\
+    location ~ ^/index\\.php(/|$) {\
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;\
+        fastcgi_split_path_info ^(.+\\.php)(/.*)$;\
+        include fastcgi_params;\
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\
+        fastcgi_param DOCUMENT_ROOT \$realpath_root;\
+        internal;\
+    }\
+    location ~ \\.php\$ {\
+        return 404;\
+    }\
+    error_log /var/log/nginx/error.log;\
+    access_log /var/log/nginx/access.log;\
+}" > /etc/nginx/sites-available/default
 
 # Comando de inicio
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
