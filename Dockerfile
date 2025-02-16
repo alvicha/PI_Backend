@@ -18,19 +18,28 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 WORKDIR /var/www/html
 
 # Copiar archivos de la aplicación
-COPY . .
+COPY . /var/www/html
 
 # 🔹 Crear directorios si no existen
 RUN mkdir -p var public
 
 # 🔹 Establecer permisos en directorios existentes
-RUN chown -R www-data:www-data var public
+RUN chown -R www-data:www-data /var/www/html
 
-# Configurar Apache
+# 🔹 Establecer permisos correctos para los archivos
+RUN chmod -R 755 /var/www/html
+
+# Configurar Apache para servir desde /var/www/html
+COPY ./config/000-default.conf /etc/apache2/sites-available/000-default.conf
+
+# Habilitar módulo de reescritura (mod_rewrite) en Apache
 RUN a2enmod rewrite
+
+# Reiniciar Apache para aplicar los cambios
 RUN service apache2 restart
 
+# Exponer el puerto 80
 EXPOSE 80
 
-# Comando de inicio
+# Comando de inicio para el contenedor
 CMD ["apache2-foreground"]
