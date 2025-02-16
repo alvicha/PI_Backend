@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Paso 1: Clonar el repositorio
+      # Paso 1: Clonar su repositorio
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
