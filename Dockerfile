@@ -27,6 +27,3 @@ RUN chmod -R 755 /var/www/html
 
 # Exponer el puerto 80
 EXPOSE 80
-
-# Comando de inicio
-CMD service php8.2-fpm start && nginx -g 'daemon off;'
