@@ -28,5 +28,8 @@ RUN chmod -R 755 /var/www/html
 # Exponer el puerto 80
 EXPOSE 80
 
+# Configurar Nginx para Symfony
+COPY ./config/nginx/default.conf /etc/nginx/sites-available/default
+
 # Comando de inicio
-CMD ["sh", "-c", "service php8.2-fpm start && exec nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
