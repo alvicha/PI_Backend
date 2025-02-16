@@ -48,5 +48,12 @@ jobs:
             # Descargar la última imagen de Docker Hub
             docker pull ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
 
+            # Crear red personalizada (si es necesario)
+            docker network create --driver bridge symfony_network || true
+
             # Ejecutar el contenedor en modo detached
-            docker run -d --name symfony_api -p 80:80 --restart always ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
+            docker run -d --name symfony_api \
+              -p 80:80 \
+              --restart always \
+              --network symfony_network \
+              ${{ secrets.DOCKER_USERNAME }}/symfony-api:latest
