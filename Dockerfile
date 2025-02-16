@@ -25,7 +25,7 @@ COPY . /var/www/html
 COPY nginx.conf /etc/nginx/sites-available/default
 
 # Habilitar la configuración de Nginx
-RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+RUN rm -f /etc/nginx/sites-enabled/default && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Establecer permisos
 RUN chown -R www-data:www-data /var/www/html
