@@ -1,7 +1,7 @@
 # Imagen base con PHP-FPM
 FROM php:8.2-fpm
 
-# Instalar extensiones de PHP
+# Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libpq-dev \
@@ -25,33 +25,33 @@ COPY . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 755 /var/www/html
 
+# Copiar la configuración de Nginx directamente en el Dockerfile
+RUN echo "\
+server {\n\
+    listen 80;\n\
+    server_name _;\n\
+    root /var/www/html/public;\n\
+    index index.php;\n\
+    location / {\n\
+        try_files \$uri /index.php\$is_args\$args;\n\
+    }\n\
+    location ~ ^/index\\.php(/|$) {\n\
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;\n\
+        fastcgi_split_path_info ^(.+\\.php)(/.*)$;\n\
+        include fastcgi_params;\n\
+        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\n\
+        fastcgi_param DOCUMENT_ROOT \$realpath_root;\n\
+        internal;\n\
+    }\n\
+    location ~ \\.php\$ {\n\
+        return 404;\n\
+    }\n\
+    error_log /var/log/nginx/error.log;\n\
+    access_log /var/log/nginx/access.log;\n\
+}" > /etc/nginx/sites-available/default
+
 # Exponer el puerto 80
 EXPOSE 80
-
-# Configurar Nginx directamente desde el Dockerfile (sin archivo externo)
-RUN echo "\
-server {\
-    listen 80;\
-    server_name _;\
-    root /var/www/html/public;\
-    index index.php;\
-    location / {\
-        try_files \$uri /index.php\$is_args\$args;\
-    }\
-    location ~ ^/index\\.php(/|$) {\
-        fastcgi_pass unix:/run/php/php8.2-fpm.sock;\
-        fastcgi_split_path_info ^(.+\\.php)(/.*)$;\
-        include fastcgi_params;\
-        fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;\
-        fastcgi_param DOCUMENT_ROOT \$realpath_root;\
-        internal;\
-    }\
-    location ~ \\.php\$ {\
-        return 404;\
-    }\
-    error_log /var/log/nginx/error.log;\
-    access_log /var/log/nginx/access.log;\
-}" > /etc/nginx/sites-available/default
 
 # Comando de inicio
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
