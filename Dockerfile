@@ -25,9 +25,6 @@ COPY . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 755 /var/www/html
 
-# Copiar configuración de Nginx
-COPY ./config/nginx.conf /etc/nginx/nginx.conf
-
 # Exponer el puerto 80
 EXPOSE 80
 
