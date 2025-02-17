@@ -1,38 +1,40 @@
+# Usar una imagen base de PHP-FPM en Alpine
 FROM php:8.2-fpm-alpine
 
 # Instalar dependencias necesarias y Nginx
 RUN apk update && apk add --no-cache \
-    libicu-dev \
+    nginx \
+    icu-dev \
     libpq-dev \
     git \
     unzip \
-    nginx \
+    zip \
     && docker-php-ext-install intl pdo pdo_mysql opcache \
     && docker-php-ext-enable opcache
 
-# Instalar Composer
+# Instalar Composer (para gestionar dependencias de Symfony)
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar el directorio de trabajo
+# Configurar el directorio de trabajo en la ruta de Symfony
 WORKDIR /var/www/html
 
-# Copiar los archivos del proyecto Symfony
+# Copiar los archivos del proyecto Symfony al contenedor
 COPY . /var/www/html
 
-# Instalar las dependencias de Composer (sin dependencias de desarrollo)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Instalar las dependencias de Symfony usando Composer
+RUN composer install --optimize-autoloader --no-interaction
 
-# Copiar la configuración de Nginx
-COPY nginx.conf /etc/nginx/sites-available/default
+# Copiar la configuración de Nginx a la ruta correcta dentro del contenedor
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Habilitar la configuración de Nginx
-RUN rm -f /etc/nginx/sites-enabled/default && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+RUN rm -f /etc/nginx/sites-enabled/default && ln -s /etc/nginx/nginx.conf /etc/nginx/sites-enabled/default
 
-# Establecer permisos
+# Establecer permisos correctos para los archivos y directorios de Symfony
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 755 /var/www/html
 
-# Exponer el puerto 80
+# Exponer el puerto 80 para Nginx
 EXPOSE 80
 
 # Comando de inicio para PHP-FPM y Nginx
