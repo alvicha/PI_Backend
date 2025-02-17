@@ -3,7 +3,7 @@ name: Deploy Symfony App to AWS
 on:
   push:
     branches:
-      - alberto  # Cambia esto por la rama que quieres que dispare el despliegue
+      - main  # Cambia esto por la rama que quieres que dispare el despliegue
 
 jobs:
   build-and-deploy:
@@ -24,7 +24,6 @@ jobs:
     # 3. Construir y subir la imagen de Symfony (PHP)
     - name: Build and push Symfony Docker image
       run: |
-        cd php  # Cambia a tu directorio donde esté el Dockerfile para Symfony
         docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony_app:v1 .
         docker push ${{ secrets.DOCKER_USERNAME }}/symfony_app:v1
 
@@ -32,11 +31,11 @@ jobs:
     - name: Transfer docker-compose.yml to remote server
       uses: appleboy/scp-action@master
       with:
-        host: ${{ secrets.REMOTE_HOST }}  # Dirección IP o dominio de tu servidor EC2 en AWS
-        username: ${{ secrets.REMOTE_USER }}  # Nombre de usuario SSH en tu servidor (por ejemplo, ec2-user para Amazon Linux)
-        key: ${{ secrets.REMOTE_KEY }}  # La clave privada SSH que tengas asociada con tu servidor
-        source: ./docker-compose.prod.yml  # La ubicación del archivo docker-compose en tu repositorio
-        target: ~/deploy/  # El destino en el servidor remoto donde se copiará el archivo
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.REMOTE_KEY }}
+        source: ./docker-compose.yml
+        target: ~/deploy/
 
     # 5. Desplegar con Docker Compose en el servidor remoto
     - name: Deploy with Docker Compose
@@ -53,8 +52,8 @@ jobs:
           sudo chmod 666 /var/run/docker.sock
           
           # Detener y eliminar contenedores actuales (si existen)
-          docker compose down || true
+          docker-compose down || true
           
           # Descargar las últimas imágenes y reiniciar los contenedores
-          docker compose pull
-          docker compose up -d
+          docker-compose pull
+          docker-compose up -d
