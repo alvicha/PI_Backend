@@ -1,13 +1,11 @@
-# Imagen base con PHP-FPM
-FROM php:8.2-fpm
+FROM php:8.2-fpm-alpine
 
 # Instalar dependencias necesarias y Nginx
-RUN apt-get update && apt-get install -y \
+RUN apk update && apk add --no-cache \
     libicu-dev \
     libpq-dev \
     git \
     unzip \
-    zip \
     nginx \
     && docker-php-ext-install intl pdo pdo_mysql opcache \
     && docker-php-ext-enable opcache
@@ -21,8 +19,8 @@ WORKDIR /var/www/html
 # Copiar los archivos del proyecto Symfony
 COPY . /var/www/html
 
-# Instalar las dependencias de Composer
-RUN composer install --optimize-autoloader --no-interaction
+# Instalar las dependencias de Composer (sin dependencias de desarrollo)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copiar la configuración de Nginx
 COPY nginx.conf /etc/nginx/sites-available/default
