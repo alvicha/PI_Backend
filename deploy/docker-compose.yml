@@ -22,9 +22,9 @@ services:
     image: mysql:5.7  # Imagen de MySQL (puedes cambiarla por otro sistema de base de datos como PostgreSQL)
     container_name: symfony-db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: symfony_db
-      MYSQL_USER: symfony
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: proyecto
+      MYSQL_USER: root
       MYSQL_PASSWORD: password
     volumes:
       - db-data:/var/lib/mysql  # Persistir los datos de la base de datos
