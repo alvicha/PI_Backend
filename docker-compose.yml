@@ -1,45 +1,42 @@
 version: '3.8'
 
 services:
-  # Servicio para Symfony
   symfony:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: symfony-api
-    container_name: symfony_api
-    ports:
-      - "80:80"   # Mapea el puerto 80 del contenedor al puerto 80 de tu máquina
+    image: your-dockerhub-username/your-symfony-app:latest  # Aquí puedes poner la imagen que construyas o el nombre de la imagen Docker que quieras usar
+    container_name: symfony-app
     environment:
-      - DATABASE_URL=mysql://root:root@db:3306/proyecto
+      - APP_ENV=prod
+      - DATABASE_URL=mysql://symfony:password@db:3306/symfony_db
+      - MAILER_DSN=smtp://localhost:25  # Ajusta según el servicio de correo que utilices
+    ports:
+      - "80:80"  # Puerto expuesto para acceder a la aplicación
+    volumes:
+      - ./public:/var/www/html/public  # Mapea los archivos locales (como public/) al contenedor
+      - ./var:/var/www/html/var  # Mapea el directorio 'var' para almacenar caché y logs
     depends_on:
       - db
     networks:
-      - symfony_network
-    volumes:
-      - .:/var/www/html
+      - app-network
 
-  # Servicio para MySQL
   db:
-    image: mysql:8.0
-    container_name: mysql_db
+    image: mysql:5.7  # Imagen de MySQL (puedes cambiarla por otro sistema de base de datos como PostgreSQL)
+    container_name: symfony-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: proyecto
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-    ports:
-      - "3306:3306"
-    networks:
-      - symfony_network
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: symfony_db
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: password
     volumes:
-      - db_data:/var/lib/mysql
+      - db-data:/var/lib/mysql  # Persistir los datos de la base de datos
+    networks:
+      - app-network
 
-# Definir la red personalizada
+  # Puedes agregar más servicios como un servidor de correo, Redis, o cualquier otro servicio que necesite tu aplicación
+
 networks:
-  symfony_network:
+  app-network:
     driver: bridge
 
-# Definir el volumen para los datos de la base de datos
 volumes:
-  db_data:
+  db-data:
+    driver: local
