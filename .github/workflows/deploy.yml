@@ -3,75 +3,58 @@ name: Deploy Symfony App to AWS
 on:
   push:
     branches:
-      - alberto
+      - main  # Cambia esto por la rama que quieres que dispare el despliegue
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Clonar el repositorio
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Install Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-
-    - name: Cache Docker layers
-      uses: actions/cache@v2
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
-    - name: Login to Docker Hub
+    # 2. Iniciar sesión en DockerHub
+    - name: Log in to DockerHub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Docker image
+    # 3. Construir y subir la imagen de Symfony (PHP)
+    - name: Build and push Symfony Docker image
       run: |
-        docker-compose -f docker-compose.yml build
+        cd php  # Cambia a tu directorio donde esté el Dockerfile para Symfony
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/symfony_app:v1 .
+        docker push ${{ secrets.DOCKER_USERNAME }}/symfony_app:v1
 
-    - name: Push Docker image
-      run: |
-        docker-compose -f docker-compose.yml push
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Install AWS CLI
-      run: |
-        # Instalar dependencias necesarias
-        sudo apt-get update
-        sudo apt-get install -y unzip curl
-
-        # Descargar e instalar AWS CLI v2
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install
-
-        # Verificar la instalación de AWS CLI
-        aws --version
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    # 4. Transferir docker-compose.yml al servidor remoto
+    - name: Transfer docker-compose.yml to remote server
+      uses: appleboy/scp-action@master
       with:
-        aws-access-key-id: ${{ secrets.REMOTE_HOST }}
-        aws-secret-access-key: ${{ secrets.REMOTE_KEY }}
-        aws-region: us-east-1
+        host: ${{ secrets.REMOTE_HOST }}  # Dirección IP o dominio de tu servidor EC2 en AWS
+        username: ${{ secrets.REMOTE_USER }}  # Nombre de usuario SSH en tu servidor (por ejemplo, ec2-user para Amazon Linux)
+        key: ${{ secrets.REMOTE_KEY }}  # La clave privada SSH que tengas asociada con tu servidor
+        source: ./docker-compose.prod.yml  # La ubicación del archivo docker-compose en tu repositorio
+        target: ~/deploy/  # El destino en el servidor remoto donde se copiará el archivo
 
-    - name: Update ECS Service to use the new Docker image
-      run: |
-        aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment
+    # 5. Desplegar con Docker Compose en el servidor remoto
+    - name: Deploy with Docker Compose
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}  # Dirección IP o dominio de tu servidor EC2 en AWS
+        username: ${{ secrets.REMOTE_USER }}  # Nombre de usuario SSH en tu servidor
+        key: ${{ secrets.REMOTE_KEY }}  # Clave privada SSH
+        script: |
+          # Navegar al directorio donde se encuentra docker-compose.yml
+          cd ~/deploy
+          
+          # Configurar permisos para el socket de Docker
+          sudo chmod 666 /var/run/docker.sock
+          
+          # Detener y eliminar contenedores actuales (si existen)
+          docker compose down || true
+          
+          # Descargar las últimas imágenes y reiniciar los contenedores
+          docker compose pull
+          docker compose up -d
