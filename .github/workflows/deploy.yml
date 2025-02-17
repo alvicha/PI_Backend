@@ -3,7 +3,7 @@ name: Deploy Symfony App to AWS
 on:
   push:
     branches:
-      - main  # Cambia esto por la rama que quieres que dispare el despliegue
+      - alberto
 
 jobs:
   build-and-deploy:
